@@ -1,9 +1,9 @@
 use std::env;
 use tokio;
 
-mod utils;
-mod info;
 mod dtos;
+mod info;
+mod utils;
 
 pub use info::Info;
 
@@ -15,7 +15,9 @@ async fn main() {
         panic!("Please export API_KEY");
     });
     let info = utils::get_info_from_cli();
-    let summoner_dto: dtos::SummonerDTO = utils::get_summoner_dto(info, SERVER, api_key).await.unwrap();
+    let summoner_dto: dtos::SummonerDTO = utils::get_summoner_dto(info, SERVER, api_key)
+        .await
+        .unwrap();
 
-    println!("summonerDTO: {:?}", summoner_dto);
+    println!("{:?}", summoner_dto);
 }
