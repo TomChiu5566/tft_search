@@ -59,8 +59,32 @@ pub async fn get_league_entries_dto(
     let res = call_api(client, endpoint).await?;
     let raw_text = res.text().await?;
     let text = to_snake_case(raw_text);
-    let league_entries_dto: dtos::LeagueEntryDTO = serde_json::from_str(&text[1..text.len() - 1])?;
+    let league_entries_dto: dtos::LeagueEntryDTO = serde_json::from_str(&text)?;
     Ok(league_entries_dto)
+}
+
+pub async fn get_matches(
+    puuid: String,
+    server: &str,
+    api_key: String,
+    count: u32,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+    let endpoint = format!(
+        "https://{}/tft/match/v1/matches/by-puuid/{}/ids?count={}&api_key={}",
+        server, puuid, count, api_key
+    );
+
+    let res = call_api(client, endpoint).await?;
+    let raw_text = res.text().await?;
+    let text = to_snake_case(raw_text);
+    let matches: Vec<String> = text
+        .trim()
+        .split(',')
+        .map(|m| &m[1..m.len() - 1])
+        .map(String::from)
+        .collect();
+    Ok(matches)
 }
 
 async fn call_api(
@@ -82,6 +106,8 @@ async fn call_api(
 fn to_snake_case(raw_text: String) -> String {
     // Can refactor it to be a general function
     raw_text
+        .replace("[", "")
+        .replace("]", "")
         .replace("accountId", "account_id")
         .replace("profileIconId", "profile_icon_id")
         .replace("revisionDate", "revision_date")

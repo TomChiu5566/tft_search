@@ -4,7 +4,7 @@ use serde::Deserialize;
 pub struct SummonerDTO {
     pub id: String,
     account_id: String,
-    puuid: String,
+    pub puuid: String,
     name: String,
     profile_icon_id: i32,
     revision_date: i64,
