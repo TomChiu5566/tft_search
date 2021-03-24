@@ -1,4 +1,5 @@
 use clap::{App, Arg};
+use log::{error, trace};
 use reqwest;
 use serde_json;
 use std::io::{Error, ErrorKind};
@@ -16,26 +17,39 @@ pub fn get_info_from_cli() -> Info {
                 .short("n")
                 .long("name")
                 .takes_value(true)
-                .required(true)
+                .required(false)
                 .help("Summoner's name to search"),
         )
+        .arg(
+            Arg::with_name("match_count")
+                .short("m")
+                .long("match-count")
+                .takes_value(true)
+                .required(false)
+                .help("Number of matches to retrieve"),
+        )
         .get_matches();
-    let summoner_name = matches.value_of("name").unwrap_or_else(|| "SSomeGuyy");
+    let summoner_name = matches
+        .value_of("name")
+        .unwrap_or_else(|| "PittsburghSpirit");
+    let match_count = matches
+        .value_of("match_count")
+        .unwrap_or_else(|| "20")
+        .parse::<u32>()
+        .unwrap();
 
-    Info::new(summoner_name.to_string())
+    Info::new(summoner_name.to_string(), match_count)
 }
 
 pub async fn get_summoner_dto(
-    info: Info,
+    summoner_name: String,
     server: &str,
     api_key: String,
 ) -> Result<dtos::SummonerDTO, Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
     let endpoint = format!(
         "https://{}/tft/summoner/v1/summoners/by-name/{}?api_key={}",
-        server,
-        info.get_summoner_name(),
-        api_key
+        server, summoner_name, api_key
     );
 
     let res = call_api(client, endpoint).await?;
@@ -94,9 +108,9 @@ async fn call_api(
     let res = client.get(&endpoint).send().await?;
 
     if res.status().is_success() {
-        println!("{}: success!", endpoint);
+        trace!("{}: success!", endpoint);
     } else {
-        println!("{}", res.status());
+        error!("{}", res.status());
         let msg = format!("Cannot fetch info using endpoint {}", endpoint);
         Err(Box::new(Error::new(ErrorKind::Other, msg)))?;
     }
